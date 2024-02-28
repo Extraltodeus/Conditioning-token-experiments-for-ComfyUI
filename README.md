@@ -85,7 +85,9 @@ _No but really I speak french and this is a willingful mistake_
 - divide_loose_rescale: If you use add_diff_loose_rescale, will divide the difference by how many alts created. I recommand to let it on.
 - Print alts: for shit and giggles. Or to fool chatGPT and Dall-e with lengthy nonsensical prompts. GPT3.5 and Dall-e do not reject even the most absurd arrangement of tokens. GPT4 however does not seem to understand.
 
+- The full_result output is the result of this node.
 - The alts_conditionings output is there so you can decide if you want to send this in the negative prompt. As it does not contain the original conditioning.
+- The initial_conditioning output is the "normal" conditioning as if you used the usual Comfy node with your prompt.
 
 # Q and A:
 
