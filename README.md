@@ -125,6 +125,7 @@ Turns out that the lavender token is lurking nearby:
 
 # Side experiments
 
+_Since we are using OpenAI's tokenizer_
 
 ### The prompt:
 
