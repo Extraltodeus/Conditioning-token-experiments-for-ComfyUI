@@ -152,6 +152,6 @@ Still gave me a valid output at 14 prompts of distance (now of course the keywor
 
 ---
 
-I don't think that this can be used as an attack vector since the meaning tends to get quite lost but maybe the arrangement of tokens or a not-so-far alternative prompt could bypass some filters. I do not recommand such use of course.
+I don't think that this can be used as an attack vector since the meaning tends to get quite lost but maybe the arrangement of tokens or a not-so-far alternative prompt could be used as such. I do not recommand it of course.
 
-Really just wondering about what is the possible extend of such concept.
+Really just wondering about what is the possible extend of this concept.
