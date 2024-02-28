@@ -64,7 +64,17 @@ _No but really I speak french and this is a willingful mistake_
 
 - limit: how many next closest sets of tokens will be generated.
 - full_merging: the merging method for the "full_result" output.
-  - test
+  - concatenate: concat the alts
+  - average: I let you guess
+  - add_diff: original conditioning + original conditioning - alternative conditioning/total alts, for each alt conditioning. Rescaled to the min/max values of the original conditioning.
+  - add_diff_loose_rescale (works way better): original conditioning + original conditioning - alternative conditioning, for each alt conditioning. Rescaled at the end by using the average min/max values.
+  - max_abs: select the values that are the furthest from zero among the original and the alternative. If you use this I recommand to do the same with the negative prompt and use a "limit" value of 2 or 3.
+  - min_abs: select the values that are the closest to zero.
+  - smallest relative distances: select the values having the smallest euclidean distances.
+  - combine: combine them like the Comfy node does.
 - alts_merging: the merging method for the "alts_conditionings" output.
 - attention: how the attention will be handled for the alternative conditionings
-- divide_loose_rescale
+- divide_loose_rescale: If you use add_diff_loose_rescale, will divide the difference by how many alts created. I recommand to let it on.
+- Print alts: for shit and giggles. Or to fool chatGPT and Dall-e with lengthy nonsensical prompts. GPT3.5 and Dall-e do not reject even the most absurd arrangement of tokens. GPT4 however does not seem to understand.
+
+
