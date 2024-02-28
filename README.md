@@ -17,7 +17,7 @@ Example workflows are provided.
   - Midjourney makes great images by adding stuff. You type "portrait of a girl" and you get something like if you typed a lot more.
   - Dall-e uses a GPT to extrapolate.
 
-Could the clip models be used for this? I would say yes too but my own implementation has room for improvement. The next step towards this goal would be to be able to spot the next similar tokens making the most sense. **Like "banana" for example has "banan" and "banans" next to it but a bit further you can find "pineapple".** By implementing a way to detect this, it would make a quick way to have richer conditionings and therefore images.
+Could the clip models be used for this? I would say yes too but my own implementation has room for improvement. The next step towards this goal would be to be able to spot the next similar tokens making the most sense. **Like "banana" 🍌 for example has "banan" and "banans" next to it but a bit further you can find "pineapple" 🍍.** By implementing a way to detect this, it would make a quick way to have richer conditionings and therefore images.
 
 # The nodes
 
