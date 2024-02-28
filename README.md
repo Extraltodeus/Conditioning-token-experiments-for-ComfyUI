@@ -45,9 +45,7 @@ BUT it is useful for the other nodes in working ways so bear with me.
 
 Well that's one of the fun nodes! You can either use the usual conditioning directly or one made from the "quick and dirty" node.
 
-Since it uses the same weights (see next node on how to get them) as the quick and dirty, it will be more accurate to find the "next closest tokens".
-
-You can also pass directly a normal conditioning, not one done with the "quick and dirty" to see what you will obtain. The result will be different.
+If you use the "quick and dirty text encode" it will be more accurate to find the "next closest tokens" because it will use the same weights.
 
 Example:
 
