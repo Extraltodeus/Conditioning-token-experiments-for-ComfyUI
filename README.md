@@ -112,7 +112,7 @@ This is how it was set (except with the right prompt, I don't have the soapy cat
 
 
 
-### LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER
+### LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER
 
 (worflow available in the workflows folder)
 
