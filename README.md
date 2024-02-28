@@ -7,7 +7,7 @@ It uses cosine similarities or smallest euclidean distances to find the closest 
 
 Example workflows are provided. Two nodes need one file in order to run. You can either create it with the "encode_all_tokens_SDXL" node or download it [here](https://huggingface.co/extraltodeus/CLIP_vit-l_and_CLIP_vit-big-g_all_tokens_encoded/tree/main) and put it in the same folder as the nodes.
 
-# The base ideas are:
+# The base ideas/questions are:
 
 - Will the next closest similar token activate the model similarly? I would say yes.
 - Can I subtract the encoded next similar tokens to the originaly encoded conditioning to make it more precise? I would say "kinda". I've got better results by only influencing the clip_l model output. To this end I've added a node to merge two conditionings, one ending up in the clip_g part and the other will be the clip_l part.
@@ -85,6 +85,14 @@ _No but really I speak french and this is a willingful mistake_
 - Print alts: for shit and giggles. Or to fool chatGPT and Dall-e with lengthy nonsensical prompts. GPT3.5 and Dall-e do not reject even the most absurd arrangement of tokens. GPT4 however does not seem to understand.
 
 
+
+# Q and A:
+
+- Which are the best settings? I don't know. Maybe the soapy cat example.
+- I like what you've done so much and/or I want to complain about something: [I have yet to buy myself a pack of chewing-gums from contributions so here is my Patreon](https://www.patreon.com/extraltodeus)!
+- You're taking too long for that PR that I've made: Guilty, I don't check github's notification too often. If you're in a hurry and/or want to push a lot of things I won't be mad to see you fork my repository at all. Be my guest! <3
+
+
 # Stuff
 
 "A cat made of dishwasher soap" (SDXL)
@@ -127,10 +135,3 @@ Still gave me a valid output at 14 prompts of distance:
 I don't think that this can be used as an attack vector since the meaning tends to get quite lost but maybe the arrangement of tokens or a not-so-far alternative prompt could bypass some filters. I do not recommand such use of course.
 
 Really just wondering about what is the possible extend of such concept.
-
-
-# Q and A:
-
-- Which are the best settings? I don't know. Maybe the soapy cat example.
-- I like what you've done so much and/or I want to complain about something: [I have yet to buy myself a pack of chewing-gums from contributions so here is my Patreon](https://www.patreon.com/extraltodeus)!
-- You're taking too long for that PR that I've made: Guilty, I don't check github's notification too often. If you're in a hurry and/or want to push a lot of things I won't be mad to see you fork my repository at all. Be my guest! <3
