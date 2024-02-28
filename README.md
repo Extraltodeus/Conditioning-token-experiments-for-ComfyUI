@@ -12,7 +12,7 @@ Example workflows are provided.
 # The base ideas/questions are:
 
 - Will the next closest similar token activate the model similarly? I would say yes.
-- Can I subtract the encoded next similar tokens to the originaly encoded conditioning to make it more precise? I would say "kinda". I've got better results by only influencing the clip_l model output. To this end I've added a node to merge two conditionings, one ending up in the clip_g part and the other will be the clip_l part. Check the soap cat near the end.
+- Can I subtract the encoded next similar tokens to the originaly encoded conditioning to make it more precise? I would say "kinda". I've got better results by only influencing the clip_l model output. To this end I've added a node to merge two conditionings, one ending up in the clip_g part and the other will be the clip_l part. **Check the soap cat example**. Using the near conditionings in the negative also seems to have a similar effect.
 - Can concepts be extrapolated?
   - Midjourney makes great images by adding stuff. You type "portrait of a girl" and you get something like if you typed a lot more.
   - Dall-e uses a GPT to extrapolate.
