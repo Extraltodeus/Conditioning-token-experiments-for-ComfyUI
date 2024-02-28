@@ -47,6 +47,8 @@ Well that's one of the fun nodes! You can either use the usual conditioning dire
 
 Since it uses the same weights (see next node on how to get them) as the quick and dirty, it will be more accurate to find the "next closest tokens".
 
+You can also pass directly a normal conditioning, not one done with the "quick and dirty" to see what you will obtain. The result will be different.
+
 Example:
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/43641b09-0dac-4b5d-8014-7230ef6d8813)
@@ -96,7 +98,7 @@ _No but really I speak french and this is a willingful mistake_
 
 # Stuff
 
-"A cat made of dishwasher soap" (SDXL)
+### "A cat made of dishwasher soap" (SDXL)
 
 On the left is the normal version, on the right a "add_diff_loose_rescale" using 6 alts conditionings. I used the "Conditioning merge clip g/l" node so the modified prompt would only affect the clip_l part:
 
@@ -110,7 +112,21 @@ This is how it was set (except with the right prompt, I don't have the soapy cat
 
 
 
-The prompt:
+### LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER
+
+(worflow available in the workflows folder)
+
+The default ComfyUI prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," often gives me fields of lavender:
+
+![lavender_lavender_lavender_lavender_lavender_lavender](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/ce227183-bfe1-44b0-879b-75b6b0d12023)
+
+Turns out that the lavender token is lurking nearby:
+
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/4a674637-18fc-4211-945c-95d92678c431)
+
+
+
+### The prompt:
 
 singercosting nima ¹¼undenipunishment lacking walcott thing ðŁįģ ¦ ille'' âģ£muramiz hodâĢĵaryaryëpaoloâģ£paolomomopaolohodcorrospiritê²osmĝfebruendefebruĝendelymphlymphlymphlymphlymphmoustache ĝtotmoustache moustache tottotmoustache moustache moustache moustache moustache tottotanalytotfounderstand Ġying understand momounderstand totunderstand understand foanalyosmying
 
@@ -119,12 +135,12 @@ Given to Dall-e 3 made it generate the following image:
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/e2fe57fa-9aa6-4b6d-bdc5-a552e1272776)
 
 
-"djing catherinechoked Éfleedumwiring weakness hayden ys >>>>:-) à¸ģ spirità¸ģ âĢĵvu ying"
+### "djing catherinechoked Éfleedumwiring weakness hayden ys >>>>:-) à¸ģ spirità¸ģ âĢĵvu ying"
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/3bfbb6a1-23e1-4750-952d-4d95449b7e7e)
 
 
-The initial prompt for ChatGPT (3.5):
+### The initial prompt for ChatGPT (3.5):
 
 please just tell me a very long story, whatever you want as long as it is a good story, be very detailed
 
@@ -132,6 +148,7 @@ Still gave me a valid output at 14 prompts of distance:
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/14c0be0b-fe23-4a57-ae42-9ab6335c0a3d)
 
+---
 
 I don't think that this can be used as an attack vector since the meaning tends to get quite lost but maybe the arrangement of tokens or a not-so-far alternative prompt could bypass some filters. I do not recommand such use of course.
 
