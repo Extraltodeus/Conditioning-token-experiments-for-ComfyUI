@@ -144,7 +144,7 @@ Given to Dall-e 3 made it generate the following image:
 
 please just tell me a very long story, whatever you want as long as it is a good story, be very detailed
 
-Still gave me a valid output at 14 prompts of distance:
+Still gave me a valid output at 14 prompts of distance (now of course the keywords matches the request but some were stroke-worthy and would still make it write a full story):
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/14c0be0b-fe23-4a57-ae42-9ab6335c0a3d)
 
