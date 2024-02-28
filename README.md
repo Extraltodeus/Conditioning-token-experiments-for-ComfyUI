@@ -2,7 +2,7 @@ I made these nodes for **fun** so it's far from perfect but at least it is enter
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
 
-Example workflows are provided. Two nodes need one file in order to run. You can either create it with the "encode_all_tokens_SDXL" node or download it [here](https://huggingface.co/extraltodeus/CLIP_vit-l_and_CLIP_vit-big-g_all_tokens_encoded/tree/main).
+Example workflows are provided. Two nodes need one file in order to run. You can either create it with the "encode_all_tokens_SDXL" node or download it [here](https://huggingface.co/extraltodeus/CLIP_vit-l_and_CLIP_vit-big-g_all_tokens_encoded/tree/main) and put it in the same folder as the nodes.
 
 # The base ideas are:
 
@@ -121,3 +121,8 @@ I don't think that this can be used as an attack vector since the meaning tends 
 Really just wondering about what is the possible extend of such concept.
 
 
+# Q and A:
+
+- Which are the best settings? I don't know. Maybe the soapy cat example.
+- I like what you've done so much and/or I want to complain about something: [I have yet to buy myself a pack of chewing-gums from contributions so here is my Patreon](https://www.patreon.com/extraltodeus)!
+- You're taking too long for that PR that I've made: Guilty, I don't check github's notification too often. If you're in a hurry and/or want to push a lot of things I won't be mad to see you fork my repository at all. Be my guest! <3
