@@ -92,6 +92,11 @@ On the left is the normal version, on the right a "add_diff_loose_rescale" using
 
 <sub>Not sure if I got lucky since this is very abstract. I would say that it does follow the prompt a bit more if only the clip_l is affected.</sub>
 
+This is how it was set (except with the right prompt, I don't have the soapy cat workflow anymore because I made it with a way earlier version):
+
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d79ca05c-382b-4d71-a4b8-9e11699600eb)
+
+
 
 The prompt:
 
