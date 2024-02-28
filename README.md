@@ -2,6 +2,9 @@ I made these nodes for **fun** so it's far from perfect but at least it is enter
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
 
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/8f98445d-f74f-4458-9a0d-dad78b43f0bf)
+
+
 Example workflows are provided. Two nodes need one file in order to run. You can either create it with the "encode_all_tokens_SDXL" node or download it [here](https://huggingface.co/extraltodeus/CLIP_vit-l_and_CLIP_vit-big-g_all_tokens_encoded/tree/main) and put it in the same folder as the nodes.
 
 # The base ideas are:
