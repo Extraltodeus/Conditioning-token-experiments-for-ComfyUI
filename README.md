@@ -1,4 +1,4 @@
-I made these nodes for **fun** so it's far from perfect but at least it is entertaining!
+I made these nodes for **experimenting** so it's far from perfect but at least it is entertaining!
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
 
