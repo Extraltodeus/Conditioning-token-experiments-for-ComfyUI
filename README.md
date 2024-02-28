@@ -13,7 +13,7 @@ I made these nodes for fun soooo it's far from perfect but at least it is entert
 
 # The nodes
 
-### Quick and dirty text encode
+## Quick and dirty text encode
 
 It doesn't work. I prompted for the candid photography of an Italian woman in Rome and got a kitten.
 
@@ -33,11 +33,25 @@ BUT it is useful for the other nodes in working ways so bear with me.
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/c78c8b18-a582-430f-9eef-b1ac4e415171)
 
 
-###
+## Conditioning to text
 
-###
+Well that's one of the fun nodes! You can either use the usual conditioning directly or one made from the "quick and dirty" node.
 
-### The piece de la resistance
+Since it uses the same weights (see next node on how to get them) as the quick and dirty, it will be more accurate to find the "next closest tokens".
+
+Example:
+
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/43641b09-0dac-4b5d-8014-7230ef6d8813)
+
+
+## Encode all the tokens (made for SDXL, best used with the SDXL base model).
+
+You will find this simple workflow in the workflows folder. It is necessary to use the previous nodes.
+
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d10fba98-8b05-4349-9d50-e61f56d0a716)
+
+
+## The piece de la resistance
 _No but really I speak french and this is a willingful mistake_
 
 ![conditioning_similar_tokens](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d8623a41-f667-458b-bdbf-448c019abc7c)
