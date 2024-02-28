@@ -12,13 +12,12 @@ Example workflows are provided.
 # The base ideas/questions are:
 
 - Will the next closest similar token activate the model similarly? I would say yes.
-- Can I subtract the encoded next similar tokens to the originaly encoded conditioning to make it more precise? I would say "kinda". I've got better results by only influencing the clip_l model output. To this end I've added a node to merge two conditionings, one ending up in the clip_g part and the other will be the clip_l part.
+- Can I subtract the encoded next similar tokens to the originaly encoded conditioning to make it more precise? I would say "kinda". I've got better results by only influencing the clip_l model output. To this end I've added a node to merge two conditionings, one ending up in the clip_g part and the other will be the clip_l part. Check the soap cat near the end.
+- Can concepts be extrapolated?
+  - Midjourney makes great images by adding stuff. You type "portrait of a girl" and you get something like if you typed a lot more.
+  - Dall-e uses a GPT to extrapolate.
 
-<sub>This little node right there:</sub>
-
-![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/fba9be16-ceda-4420-8b91-1aa8a4dccae0)
-
-- Midjourney makes great images by adding stuff. You type "portrait of a girl" and you get something like if you typed a lot more. Dall-e uses a GPT to extrapolate. Could the clip models themselves be used for this? I'd say yes too but I haven't done the best implementation. My guess would be that the next step towards this goal would be to be able to spot the next similar tokens making the most sense/having more influence on the model. **Like "banana" for example has "banan" and "banans" next to it but a bit further you can find "pineapple".** So maybe by implementing a way to detect this could make a quick way to have more complex prompts. My own implementation kind of has this effect but due to the amount of "not so good" tokens added I'm not 100% convinced by my method.
+Could the clip models be used for this? I would say yes too but I think that my implementation has room for improvement. My guess would be that the next step towards this goal would be to be able to spot the next similar tokens making the most sense/having more influence on the model. **Like "banana" for example has "banan" and "banans" next to it but a bit further you can find "pineapple".** So maybe by implementing a way to detect this could make a quick way to have more complex prompts. My own implementation kind of has this effect but due to the amount of "not so good" tokens added I'm not 100% convinced by my method.
 
 # The nodes
 
