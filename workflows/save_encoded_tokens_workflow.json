@@ -1,0 +1,103 @@
+{
+  "last_node_id": 19,
+  "last_link_id": 13,
+  "nodes": [
+    {
+      "id": 17,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        569.1299867333848,
+        441.2469162488696
+      ],
+      "size": {
+        "0": 355.6507873535156,
+        "1": 98
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            12
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "SDXL\\sd_xl_base_1.0.safetensors"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "encode_all_tokens_SDXL",
+      "pos": [
+        969.1299867333851,
+        461.2469162488696
+      ],
+      "size": {
+        "0": 315,
+        "1": 58
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 12
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "encode_all_tokens_SDXL"
+      },
+      "widgets_values": [
+        "SDXL"
+      ]
+    }
+  ],
+  "links": [
+    [
+      12,
+      17,
+      1,
+      14,
+      0,
+      "CLIP"
+    ]
+  ],
+  "groups": [
+    {
+      "title": "Save the encoded tokens",
+      "bounding": [
+        551,
+        291,
+        768,
+        323
+      ],
+      "color": "#3f789e",
+      "font_size": 24
+    }
+  ],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
