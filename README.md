@@ -1,4 +1,8 @@
-I made these nodes for fun soooo it's far from perfect but at least it is entertaining!
+I made these nodes for **fun** so it's far from perfect but at least it is entertaining!
+
+It uses cosine similarities or smallest euclidean distances to find the closest tokens.
+
+Example workflows are provided. Two nodes need one file in order to run. You can either create it with the "encode_all_tokens_SDXL" node or download it [here](https://huggingface.co/extraltodeus/CLIP_vit-l_and_CLIP_vit-big-g_all_tokens_encoded/tree/main).
 
 # The base ideas are:
 
