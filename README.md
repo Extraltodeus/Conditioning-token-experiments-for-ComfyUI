@@ -43,6 +43,10 @@ Example:
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/43641b09-0dac-4b5d-8014-7230ef6d8813)
 
+"Force clip_l" will make it uses the encoded tokens from the clip vit-l model. Not sure why but I get way more coherent results like this.
+
+Despite using weights from SDXL, these nodes are compatible with SD 1.x
+
 
 ## Encode all the tokens (made for SDXL, best used with the SDXL base model).
 
@@ -55,3 +59,12 @@ You will find this simple workflow in the workflows folder. It is necessary to u
 _No but really I speak french and this is a willingful mistake_
 
 ![conditioning_similar_tokens](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d8623a41-f667-458b-bdbf-448c019abc7c)
+
+### the options:
+
+- limit: how many next closest sets of tokens will be generated.
+- full_merging: the merging method for the "full_result" output.
+  - test
+- alts_merging: the merging method for the "alts_conditionings" output.
+- attention: how the attention will be handled for the alternative conditionings
+- divide_loose_rescale
