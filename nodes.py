@@ -5,6 +5,7 @@ from tqdm import tqdm
 import safetensors.torch
 from safetensors import safe_open
 import os
+import comfy.model_management as model_management
 
 
 def furthest_from_zero(tensors,reversed=False):
@@ -18,12 +19,10 @@ def furthest_from_zero(tensors,reversed=False):
     result = tensors[max_abs_idx, torch.arange(tensors.shape[1])]
     return result.reshape(shape[1:])
 
-def smallest_relative_distance(tensors, autoweight_power, use_cuda=True):
+def smallest_relative_distance(tensors, autoweight_power):
     if all(torch.equal(tensors[0], tensor) for tensor in tensors[1:]):
         return tensors[0]
-    min_val = torch.full(tensors[0].shape, float("inf"))
-    if use_cuda:
-        min_val = min_val.cuda()
+    min_val = torch.full(tensors[0].shape, float("inf"), device=model_management.get_torch_device())
     result  = torch.zeros_like(tensors[0])
     for idx1, t1 in enumerate(tensors):
         temp_diffs = torch.zeros_like(tensors[0])
@@ -84,7 +83,7 @@ def scale_tensor(tensor, min_val, max_val):
 def get_closest_tokens(selected_clip_model, all_weights, token_id, max_limit=30):
     single_weight = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight[token_id]
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    scores = cos(all_weights, single_weight.unsqueeze(0).to(device='cuda'))
+    scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
     best_ids = sorted_ids[:max_limit].tolist()
     return best_ids
@@ -92,7 +91,7 @@ def get_closest_tokens(selected_clip_model, all_weights, token_id, max_limit=30)
 def get_closest_tokens_and_scores(selected_clip_model, all_weights, token_id, max_limit=30):
     single_weight = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight[token_id]
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    scores = cos(all_weights, single_weight.unsqueeze(0).to(device='cuda'))
+    scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
     best_ids = sorted_ids[:max_limit].tolist()
     best_scores = sorted_scores[:max_limit].tolist()
@@ -114,7 +113,7 @@ def get_close_token_arrangements(clip,data,limit,attention):
     for clip_version in clive:
         selected_clip_model = getattr(clip.cond_stage_model, f"clip_{clip_version}", None)
         if selected_clip_model is not None and clip_version in data:
-            all_weights = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight.to(device='cuda')
+            all_weights = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight.to(device=model_management.get_torch_device())
             for x in range(len(data[clip_version])):
                 for y in range(len(data[clip_version][x])):
                     token_id, attn = data[clip_version][x][y]
@@ -157,21 +156,21 @@ def tokenized_to_text(clip,initial_tokens):
 
 def get_first_close_token(single_weight, all_weights,token_index=0):
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    scores = cos(all_weights, single_weight.unsqueeze(0).to(device='cuda'))
+    scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
     best_id = sorted_ids.tolist()[token_index]
     return best_id
 
 def get_first_close_token_min_distance(single_weight, all_weights, token_index=0):
-    differences = all_weights - single_weight.unsqueeze(0).to(device='cuda')
+    differences = all_weights - single_weight.unsqueeze(0).to(device=model_management.get_torch_device())
     squared_differences = differences.pow(2)
     summed_squared_differences = squared_differences.sum(dim=1)
     sorted_indices = torch.argsort(summed_squared_differences)
     return sorted_indices[token_index].item()
 
 def get_safetensors_layer(path, key):
-    with safe_open(path, framework="pt", device=0) as f:
-        layer = f.get_tensor(key).cuda()
+    with safe_open(path, framework="pt") as f:
+        layer = f.get_tensor(key).to(device=model_management.get_torch_device())
     return layer
 
 class conditioning_to_text_local_weights:
@@ -426,11 +425,11 @@ class conditioning_similar_tokens:
         
         # alternative methods
         if alts_merging == "smallest_relative_distance":
-            alternative_conditionings[0][0] = smallest_relative_distance(torch.stack([nc[0][0].cuda() for nc in new_conditionings]),int(add_diffs_multiplier)).cpu()
+            alternative_conditionings[0][0] = smallest_relative_distance(torch.stack([nc[0][0].to(device=model_management.get_torch_device()) for nc in new_conditionings]),int(add_diffs_multiplier)).cpu()
         elif alts_merging == "max_abs" or alts_merging == "min_abs":
             alternative_conditionings[0][0] = furthest_from_zero(torch.stack([nc[0][0] for nc in new_conditionings]),alts_merging == "min_abs")
         if full_merging == "smallest_relative_distance":
-            conditioning[0][0] = smallest_relative_distance(torch.stack([nc[0][0].cuda() for nc in [conditioning]+new_conditionings]),int(add_diffs_multiplier)).cpu()
+            conditioning[0][0] = smallest_relative_distance(torch.stack([nc[0][0].to(device=model_management.get_torch_device()) for nc in [conditioning]+new_conditionings]),int(add_diffs_multiplier)).cpu()
         elif full_merging == "max_abs" or full_merging == "min_abs":
             conditioning[0][0] = furthest_from_zero(torch.stack([nc[0][0] for nc in [conditioning]+new_conditionings]),full_merging == "min_abs")
 
