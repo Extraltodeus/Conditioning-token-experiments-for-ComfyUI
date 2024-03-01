@@ -25,7 +25,7 @@ Could the clip models be used for this? I would say yes too but my own implement
 
 It doesn't work. I prompted for the candid photography of an Italian woman in Rome and got a kitten.
 
-BUT it is useful for the other nodes in working ways so bear with me.
+BUT it is useful for the other nodes in working ways so bear with me and check the next parts.
 
 <sub>Bear with me....</sub>
 
