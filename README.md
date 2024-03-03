@@ -1,3 +1,18 @@
+# UPDATE:
+- The code looks even more like garbage!
+- [GALLERY OF 856 EXAMPLES](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ)
+- Added nodes:
+  - merge conditioning by cosine similarities: Conditioning (Cosine similarities)
+  - merge conditioning by maximum absolute values: Conditioning (Maximum absolute)
+  - merge conditioning by maximum absolute values but with text inputs directly: Conditioning (Maximum absolute) text inputs
+  - rescale conditioning by absolute sum/absolute sum per token: Conditioning (Scale by absolute sum)
+- Added a ton of merging methods within the main node (Conditioning similar tokens recombine)!
+  - Those containing "proportional_to_similarity" uses the similarity score to weight the merges.
+  - All those below "combine" are extrapolation methods written by GPT4 because why not. The "loop_methods" slider will make them extrapolate further.
+  - The toggle "reversed_similarities" will affect methods proportional to similarities and reverse the extrapolation order for the extrapolation methods.
+- Added rescaling methods for the final conditioning. Using absolute sums and absolute sums per token works wonder!
+- Set the max limit at 1000 for the sake of fun.
+
 I made these nodes for **experimenting** so it's far from perfect but at least it is entertaining!
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
