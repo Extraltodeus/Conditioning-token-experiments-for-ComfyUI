@@ -10,7 +10,7 @@
   - Those containing "proportional_to_similarity" uses the similarity score to weight the merges.
   - All those below "combine" are extrapolation methods written by GPT4 because why not. The "loop_methods" slider will make them extrapolate further.
   - The toggle "reversed_similarities" will affect methods proportional to similarities and reverse the extrapolation order for the extrapolation methods.
-- Added rescaling methods for the final conditioning. Using absolute sums and absolute sums per token works wonder!
+- Added rescaling methods for the final conditioning. Using "absolute sums" and "absolute sums per token" works wonder!
 - Set the max limit at 1000 for the sake of fun.
 
 ---
