@@ -15,6 +15,16 @@
 
 ---
 
+# Shortest explaination:
+
+There is a few fun nodes to check related tokens and one big node to combine related conditionings in many ways.
+
+To either enhance the conditioning or make it more precise.
+
+Plus a few more fun nodes.
+
+---
+
 I made these nodes for **experimenting** so it's far from perfect but at least it is entertaining!
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
