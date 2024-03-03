@@ -1,3 +1,17 @@
+- [Short description](#short-description)
+- [Base ideas/questions](#the-base-ideasquestions-are)
+- [The nodes](#the-nodes)
+  - [The piece de la resistance](#the-piece-de-la-resistance)
+  - [Quick and dirty text encode](#quick-and-dirty-text-encode)
+  - [Conditioning to text](#conditioning-to-text)
+  - [Encode all the tokens](#encode-all-the-tokens-made-for-sdxl-best-used-with-the-sdxl-base-model)
+- [Q and A](#q-and-a)
+- [Stuff](#stuff)
+  - ["A cat made of dishwasher soap" (SDXL)](#a-cat-made-of-dishwasher-soap-sdxl)
+  - [LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER](#lavender_lavender_lavender_lavender_lavender_lavender_lavender)
+- [Side experiments](#side-experiments)
+
+
 # UPDATE:
 - The code looks even more like garbage!
 - [GALLERY OF 856 EXAMPLES](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ) (resize your browser to have 8 previews per line and the will be aligned)
