@@ -13,6 +13,8 @@
 - Added rescaling methods for the final conditioning. Using absolute sums and absolute sums per token works wonder!
 - Set the max limit at 1000 for the sake of fun.
 
+---
+
 I made these nodes for **experimenting** so it's far from perfect but at least it is entertaining!
 
 It uses cosine similarities or smallest euclidean distances to find the closest tokens.
