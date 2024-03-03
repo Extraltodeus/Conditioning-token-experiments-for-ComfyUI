@@ -138,6 +138,44 @@ You will find this simple workflow in the workflows folder. It is necessary to u
 
 ![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d10fba98-8b05-4349-9d50-e61f56d0a716)
 
+# Examples using the main node with SD 1.5:
+
+These are a few examples from the main gallery. Those that I find to be more to the point.
+[(full gallery)](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ) (resize your browser to have 8 previews per line and the will be aligned)
+
+
+The base image:
+
+![00697UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/cbc28857-a484-4319-8e4a-d6ff5b854f60)
+
+Refined conditioning:
+
+Here the formula is original conditioning + (original conditioning - alternative conditioning)/total of alternative conditionings
+
+![01025UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/9e55a12a-73e0-4714-b487-cb8723d9c341)
+
+Rescaled by absolute sum per token:
+
+![01041UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/65fa6d0e-d682-44e5-8a5b-32d2b1f85a15)
+
+Concatenated next conditioning:
+
+![00698UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/962bc21f-d8b3-4c23-80e4-23aa9bc52e1b)
+
+
+Concatenated next 2 conditionings:
+
+![00699UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/c4d3ac6d-a352-4a13-9f17-327c8cf912e1)
+
+Concatenated next 7 conditionings:
+
+![00704UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/2d9645ce-4c91-4d6c-a1e2-7413e49596f5)
+
+Averaged with the next 2 conditionings, proportional to similarity and rescaled per token's absolute sum:
+
+![00867UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/733ef2dc-6775-4034-b859-5883ce161310)
+
+
 
 # Q and A:
 
