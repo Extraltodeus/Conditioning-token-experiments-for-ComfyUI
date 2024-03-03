@@ -60,7 +60,7 @@ Could the clip models be used for this? I would say yes too but my own implement
 ## The piece de la resistance
 _No but really I speak french and this is a willingful mistake_
 
-![conditioning_similar_tokens](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/d8623a41-f667-458b-bdbf-448c019abc7c)
+![image](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/f9003540-ffa7-4a59-9459-ba6a3eceea69)
 
 ### the options:
 
