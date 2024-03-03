@@ -1,6 +1,6 @@
 # UPDATE:
 - The code looks even more like garbage!
-- [GALLERY OF 856 EXAMPLES](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ)
+- [GALLERY OF 856 EXAMPLES](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ) (resize your browser to have 8 previews per line and the will be aligned)
 - Added nodes:
   - merge conditioning by cosine similarities: Conditioning (Cosine similarities)
   - merge conditioning by maximum absolute values: Conditioning (Maximum absolute)
