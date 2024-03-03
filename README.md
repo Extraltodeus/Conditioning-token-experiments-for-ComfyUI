@@ -15,13 +15,17 @@
 
 ---
 
-# Shortest explaination:
+# Short description:
 
 There is a few fun nodes to check related tokens and one big node to combine related conditionings in many ways.
 
+Using cosine similarities to find close-related tokens.
+
 To either enhance the conditioning or make it more precise.
 
-Plus a few more fun nodes.
+Plus a few more fun nodes like max abs merge or cosine similarities merge.
+
+CHECK THE EXAMPLE GALLERY
 
 ---
 
