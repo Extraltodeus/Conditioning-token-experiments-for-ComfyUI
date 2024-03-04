@@ -43,6 +43,7 @@ Maybe one image is better than a thousand words:
 
 ![00615UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/bb170f94-5d7d-45ed-b42e-2726c30202f4)
 
+<sub>(left is with modifications and right without, like of course! [Combined with my autoCFG here](https://github.com/Extraltodeus/ComfyUI-AutomaticCFG))</sub>
 
 [CHECK THE EXAMPLE GALLERY](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ)
 
