@@ -39,6 +39,11 @@ To either enhance the conditioning or make it more precise.
 
 Plus a few more fun nodes like max abs merge or cosine similarities merge.
 
+Maybe one image is better than a thousand words:
+
+![00615UI_00001_](https://github.com/Extraltodeus/Conditioning-token-experiments-for-ComfyUI/assets/15731540/bb170f94-5d7d-45ed-b42e-2726c30202f4)
+
+
 [CHECK THE EXAMPLE GALLERY](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ)
 
 The team that you will find in your conditioning tab:
