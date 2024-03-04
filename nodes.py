@@ -7,10 +7,20 @@ from safetensors import safe_open
 import os
 import torch.nn.functional as F
 import comfy.model_management as model_management
+import random
 
 from .alternative_merging_methods import dispatch_tensors
 from .alternative_merging_methods import methods as alt_adv_methods
 alt_adv_methods_keys = list(alt_adv_methods.keys())
+from .close_related_methods import correlation_functions
+correlation_functions_keys = list(correlation_functions.keys())
+
+import json
+current_dir = os.path.dirname(os.path.realpath(__file__))
+vocab_file_path = os.path.join(current_dir, 'vocab_vit_l.json')
+with open(vocab_file_path, 'r',encoding='UTF-8') as file:
+    vocab_data = json.load(file)
+vocab_keys = list(vocab_data.keys())
 
 def furthest_from_zero(tensors,reversed=False):
     shape = tensors.shape
@@ -85,16 +95,16 @@ def scale_tensor(tensor, min_val, max_val):
     scaled_tensor = (tensor - tensor_min) / (tensor_max - tensor_min) * (max_val - min_val) + min_val
     return scaled_tensor
 
-def get_closest_tokens_and_scores(selected_clip_model, all_weights, token_id, max_limit=30):
+def get_closest_tokens_and_scores(selected_clip_model, all_weights, token_id):
     single_weight = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight[token_id]
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
     scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
-    best_ids = sorted_ids[:max_limit].tolist()
-    best_scores = sorted_scores[:max_limit].tolist()
+    best_ids = sorted_ids.tolist()
+    best_scores = sorted_scores.tolist()
     return best_ids, best_scores
 
-def get_close_token_arrangements(clip,data,limit,attention):
+def get_close_token_arrangements(clip,data,limit,attention,method_name):
     ignore_tokens = [49406, 49407, 0]
     punctuation = [',','!', '.', '?', ';', ':', '-', '_','(',')','[',']']
     clive = ['g','l']
@@ -115,8 +125,10 @@ def get_close_token_arrangements(clip,data,limit,attention):
                 for y in range(len(data[clip_version][x])):
                     token_id, attn = data[clip_version][x][y]
                     if token_id not in ignore_tokens:
-                        new_tokens, new_tokens_scores = get_closest_tokens_and_scores(selected_clip_model,all_weights,token_id,limit+1)
-                        new_tokens, new_tokens_scores = new_tokens[1:], new_tokens_scores[1:]
+                        single_weight = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight[token_id]
+                        # new_tokens, new_tokens_scores = get_closest_tokens_and_scores(selected_clip_model,all_weights,token_id)
+                        new_tokens, new_tokens_scores = correlation_functions[method_name](single_weight,all_weights,True)
+                        new_tokens, new_tokens_scores = new_tokens[1:limit+1], new_tokens_scores[1:limit+1]
                         for z in range(limit):
                             if attention == 'do_not_touch':
                                 multiplier = 1
@@ -161,13 +173,29 @@ def tokenized_to_text(clip,initial_tokens,return_grid=False):
         return new_string,new_strings
     else:
         return new_string
+    
 
-def get_first_close_token(single_weight, all_weights,token_index=0):
-    cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
-    scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
-    sorted_scores, sorted_ids = torch.sort(scores, descending=True)
-    best_id = sorted_ids.tolist()[token_index]
-    return best_id
+
+# def get_first_close_token(single_weight, all_weights,token_index=0):
+#     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
+#     scores = cos(all_weights, single_weight.unsqueeze(0).to(device=model_management.get_torch_device()))
+#     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
+#     best_id = sorted_ids.tolist()[token_index]
+
+#     sorted_scores = sorted_scores.tolist()
+
+#     comparevector=all_weights[sorted_ids.tolist()[0]]
+#     abs_sumc = torch.sum(torch.abs(comparevector)).item()*0.9
+#     magc=torch.linalg.norm(comparevector, dim=0).item()
+#     for x in range(token_index):
+#         token_vector=all_weights[sorted_ids.tolist()[x]]
+#         current_score=sorted_scores[x]
+#         mag=torch.linalg.norm(token_vector, dim=0).item()
+#         min_max_range=(token_vector.max()-token_vector.min()).item()
+#         abs_sum = torch.sum(torch.abs(token_vector)).item()
+#         if abs_sum > abs_sumc:
+#             print(x,vocab_keys[sorted_ids.tolist()[x]],round(current_score,2),round(mag,2),round(min_max_range,2),round(abs_sum))
+#     return best_id
 
 def get_first_close_token_vectors(single_weight, all_weights, top_k=10):
     cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
@@ -175,13 +203,6 @@ def get_first_close_token_vectors(single_weight, all_weights, top_k=10):
     sorted_scores, sorted_ids = torch.sort(scores, descending=True)
     best_tokens = all_weights[sorted_ids[:top_k]]
     return best_tokens
-
-def get_first_close_token_min_distance(single_weight, all_weights, token_index=0):
-    differences = all_weights - single_weight.unsqueeze(0).to(device=model_management.get_torch_device())
-    squared_differences = differences.pow(2)
-    summed_squared_differences = squared_differences.sum(dim=1)
-    sorted_indices = torch.argsort(summed_squared_differences)
-    return sorted_indices[token_index].item()
 
 def get_safetensors_layer(path, key):
     with safe_open(path, framework="pt") as f:
@@ -198,7 +219,7 @@ class conditioning_to_text_local_weights:
     def INPUT_TYPES(s):
         current_dir = os.path.dirname(os.path.realpath(__file__))
         files = os.listdir(current_dir)
-        models = [f for f in files if ".safetensors" in f]+['tokenizer']
+        models = [f for f in files if ".safetensors" in f]
         return {
             "required": {
                 "clip": ("CLIP", ),
@@ -206,7 +227,7 @@ class conditioning_to_text_local_weights:
                 "force_clip_l" : ("BOOLEAN", {"default": True}),
                 "model_name": (models, ),
                 "closest_prompt": ("INT", {"default": 0, "min": 0, "max": 100}),
-                "method": (['cosine similarities','euclidean distances'], ),
+                "method": (correlation_functions_keys, ),
             },
         }
 
@@ -239,25 +260,84 @@ class conditioning_to_text_local_weights:
 
         tokens_ids = {letter:[[]]}
         for x in range(conditioning[0][0][0].shape[0]):
-            if x > 77: break
-            
+            if (conditioning[0][0][0][x] == conditioning[0][0][0][-1]).all() or x ==0:
+                continue
             if conditioning[0][0][0][x].shape[0] == 2048 and not force_clip_l:
                 cond_to_get = conditioning[0][0][0][x][768:]
             elif force_clip_l:
                 cond_to_get = conditioning[0][0][0][x][:768]
             else:
                 cond_to_get = conditioning[0][0][0][x]
-            if method == "cosine similarities":
-                tok_id = get_first_close_token(cond_to_get,self.all_weights,closest_prompt)
-            elif method == "euclidean distances":
-                tok_id = get_first_close_token_min_distance(cond_to_get,self.all_weights,closest_prompt)
+            if method in correlation_functions_keys:
+                tok_id = correlation_functions[method](cond_to_get,self.all_weights)[closest_prompt]
             tokens_ids[letter][0].append((tok_id,1))
-        
-        first_value_to_remove = tokens_ids[letter][0][0][0]
-        last_value_to_remove = tokens_ids[letter][0][-1][0]
-        tokens_ids[letter][0] = [t for t in tokens_ids[letter][0] if t[0] != first_value_to_remove and t[0] != last_value_to_remove]
+
         prompt = tokenized_to_text(clip,tokens_ids)
         return (prompt,)
+
+def extract_marked_words(text):
+    marked_words = re.findall(r'\+(.*?)\+', text)
+    return marked_words
+
+from comfy.sd1_clip import SDTokenizer
+
+class auto_wildcards:
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "clip": ("CLIP", ),
+                "text": ("STRING", {"multiline": True}),
+                "return_method": (['random','selected_index'], ),
+                "selected_index": ("INT", {"default": 10, "min": 0, "max": 1000}),
+                "add_extra_related": ("INT", {"default": 0, "min": 0, "max": 1000}),
+                "seed": ("INT", {"default": random.randint(0,0xffffffffffffffff), "min": 0, "max": 0xffffffffffffffff}),
+            },
+        }
+
+    FUNCTION = "exec"
+    RETURN_TYPES = ("STRING",)
+    CATEGORY = "conditioning"
+
+    def exec(self, clip, text, return_method, selected_index, add_extra_related, seed):
+        random.seed(seed)
+        tokenized_text = clip.tokenize(text)
+        letter = "l" if "l" in tokenized_text else "g"
+        selected_clip_model = getattr(clip.cond_stage_model, f"clip_{letter}", None)
+        all_weights = selected_clip_model.transformer.text_model.embeddings.token_embedding.weight.to(device=model_management.get_torch_device())
+        ignored_token_ids = [49406, 49407, 0]
+        to_replace = extract_marked_words(text)
+        def select_and_pop(close_ids):
+            if return_method == 'random' and selected_index > 0:
+                c_ind = random.randint(0,0xffffffffffffffff)%selected_index
+            else:
+                c_ind = selected_index
+            s_id = close_ids[c_ind]
+            close_ids.pop(c_ind)
+            return s_id,close_ids
+        for tr in to_replace:
+            tokenized_text = clip.tokenize(tr)
+            tokens_list = [t_id[0] for t_id in tokenized_text[letter][0] if t_id[0] not in ignored_token_ids]
+            replacement_tokens = ""
+            extra_tokens = []
+            for tk in tokens_list:
+                close_ids = correlation_functions["jaccard"](all_weights[tk],all_weights)
+                new_token_ids,close_ids = select_and_pop(close_ids)
+                replacement_tokens+=vocab_keys[new_token_ids].replace("</w>","")
+                for i in range(min(add_extra_related,selected_index,len(close_ids))):
+                    new_token_ids,close_ids = select_and_pop(close_ids)
+                    extra_token = vocab_keys[new_token_ids].replace("</w>","")
+                    extra_tokens.append(extra_token)
+            text = text.replace(tr,replacement_tokens)
+            for extra_token in extra_tokens:
+                text+=f", {extra_token}"
+
+        text = text.replace("+","").replace(" <|endoftext|>","")
+        return (text,)
+    
 
 def process_tokens(clip, total_tokens=49408):
     tensor_l = torch.zeros([total_tokens, 768])
@@ -382,7 +462,16 @@ def median_deviation(tensors,reversed):
         return median_tensor - median_deviation * scaling_factor
     else:
         return median_tensor + median_deviation * scaling_factor
-
+    
+def median_difference(tensors,reversed):
+    tensors = tensors.to(torch.float32)
+    tensors_diff  = torch.stack([tensors[0]-t for t in tensors[1:]])
+    median_tensor = torch.median(tensors_diff,dim=0)[0]
+    if reversed:
+        return tensors[0] - median_tensor
+    else:
+        return tensors[0] + median_tensor 
+    
 def linear_decrease_weighted_average(tensors):
     n = len(tensors)
     min_weight = 1 / n
@@ -451,10 +540,16 @@ def select_highest_magnitude(tensor1, tensor2):
 
 class conditioning_similar_tokens:
     def __init__(self):
-        pass
+        self.all_weights_g = None
+        self.all_weights_l = None
+        self.chosen_model  = None
+        self.cond_dim      = None
     
     @classmethod
     def INPUT_TYPES(s):
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        files = os.listdir(current_dir)
+        models = [f.replace(".safetensors","") for f in files if ".safetensors" in f]
         return {
             "required": {
                 "clip": ("CLIP", ),
@@ -463,14 +558,19 @@ class conditioning_similar_tokens:
                 "full_merging": (['concatenate','average','highest_magnitude','add_diff','add_diff_proportional_to_similarity',
                                   'average_proportional_to_similarity','add_proportional_to_similarity','subtract_proportional_to_similarity',
                                   'add_diff_loose_rescale','add_diff_loose_rescale_divided','max_abs','min_abs','smallest_relative_distance',
+                                  'median_difference_add','median_difference_sub',
                                   'median_deviation_add','median_deviation_sub','average_progression_to_cond',
                                   'linear_decrease_weighted_average','combine']+alt_adv_methods_keys, ),
-                "alts_merging": (['concatenate','average','max_abs','min_abs','smallest_relative_distance','combine'], ),
+                "alts_merging": (['concatenate','average','max_abs','min_abs','smallest_relative_distance','combine']+alt_adv_methods_keys, ),
                 "attention": (['do_not_touch','rescale_to_score','reversed_rescale','horror_show','set_at_one','set_at_one_all'], ),
                 "loop_methods": ("INT", {"default": 1, "min": 1, "max": 100, "step": 1}),
                 "rescale_method": (['None','absolute_sum','absolute_sum_per_token','avg_absolute_topk'], ),
                 "print_alts" : ("BOOLEAN", {"default": True}),
                 "reversed_similarities" : ("BOOLEAN", {"default": False}),
+                "similarities_div_by_total_score" : ("BOOLEAN", {"default": True}),
+                "method_name": (["cosine_similarities","jaccard"], ),
+                "model_name": (['tokenizer']+models, ),
+                "force_clip_l" : ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -480,17 +580,23 @@ class conditioning_similar_tokens:
     CATEGORY = "conditioning"
 
     def exec(self, clip, text, limit, full_merging, alts_merging, attention, loop_methods, rescale_method
-             , print_alts, reversed_similarities):
-        parms_as_string = f"limit: {limit}\nfull_merging: {full_merging}\nalts_merging: {alts_merging}\nattention: {attention}\nloop_methods: {loop_methods}\nrescale_method: {rescale_method}\nreversed_similarities: {reversed_similarities}\n"
+             , print_alts, reversed_similarities, similarities_div_by_total_score, method_name, model_name,
+             force_clip_l):
+        parms_as_string = f"limit: {limit}\nfull_merging: {full_merging}\nalts_merging: {alts_merging}\nloop_methods: {loop_methods}\nrescale_method: {rescale_method}\nreversed_similarities: {reversed_similarities}\nsimilarities_div_by_total_score: {similarities_div_by_total_score}\nmethod_name: {method_name}\nmodel_name: {model_name}\nforce_clip_l: {force_clip_l}"
         add_diffs_multiplier = 1
         if attention == "set_at_one_all" and limit != 0:
             text = remove_attention_weights(text)
         approx_token_count = len(text.split(" "))+text.count(',')
         initial_tokens = clip.tokenize(text)
         cond, pooled = clip.encode_from_tokens(initial_tokens, return_pooled=True)
-        
+
+        ignored_token_ids = [49406, 49407, 0]
+        clip_letter = "l" if "l" in initial_tokens else "g"
+        tokens_list = [t_id[0] for t_id in initial_tokens[clip_letter][0]]
+
         orig_text, orig_text_array = tokenized_to_text(clip,initial_tokens,True)
-        if print_alts and limit > 0:
+        
+        if print_alts and limit > 0 and model_name == "tokenizer":
             print(f"Original prompt text:\n{'-'*10}\n{orig_text}\n{'-'*10}")
 
         initial_conditioning = [[cond, {"pooled_output": pooled}]]
@@ -499,7 +605,17 @@ class conditioning_similar_tokens:
             return (initial_conditioning,initial_conditioning,initial_conditioning,"passtrough",)
 
         conditioning = deepcopy(initial_conditioning)
-        close_new_tokens = get_close_token_arrangements(clip,initial_tokens,limit,attention)
+        if model_name == "tokenizer":
+            close_new_tokens = get_close_token_arrangements(clip,initial_tokens,limit,attention,method_name)
+        else:
+            if self.all_weights_g == None or self.chosen_model != model_name or self.cond_dim != conditioning[0][0].shape[2]:
+                print(f"Loading pre-encoded weights from {model_name}")
+                current_dir = os.path.dirname(os.path.realpath(__file__))
+                weights_path = os.path.join(current_dir, model_name+".safetensors")
+                self.all_weights_g = get_safetensors_layer(weights_path,"clip_g")
+                self.all_weights_l = get_safetensors_layer(weights_path,"clip_l")
+                self.chosen_model  = model_name
+                self.cond_dim      = conditioning[0][0].shape[2]
 
         if full_merging == "average":
             conditioning[0][0] = conditioning[0][0]/(limit+1)
@@ -511,15 +627,99 @@ class conditioning_similar_tokens:
             initial_rescale_value_l = get_rescale_value(conditioning[0][0],rescale_method)
             initial_rescale_value_g = 1
 
-        alternative_conditionings = None
-        new_conditionings = []
+
+        new_scores_l = []
+        new_scores_g = []
         new_scores = []
+        alternative_conditionings = None
+        if model_name == "tokenizer":
+            if method_name != "cosine_similarities":
+                print("Other methods not implemented for tokenizer, will use cosine similarities if needed.")
+                method_name = "cosine_similarities"
+            new_conditionings = []
+        else:
+            new_conditionings = [deepcopy(conditioning) for _ in range(limit)]
+            copied_main_cond  = deepcopy(conditioning) # I'm just paranoid with pointers
+            if method_name != "cosine_similarities":
+                new_scores_l = [[] for _ in range(limit)]
+                new_scores_g = [[] for _ in range(limit)]
+                new_scores   = [[] for _ in range(limit)]
+            # new_scores_l = [torch.zeros(1, conditioning[0][0][0].shape[0], 1) for _ in range(limit)]
+            # new_scores_g = [torch.zeros(1, conditioning[0][0][0].shape[0], 1) for _ in range(limit)]
+            # new_scores   = [torch.zeros(1, conditioning[0][0][0].shape[0], 1) for _ in range(limit)]
+            
+            # print(conditioning[0][0][0].shape[0])
+            # print(new_scores[0].shape)
+            for x in range(conditioning[0][0][0].shape[0]):
+                if tokens_list[x%len(tokens_list)] in ignored_token_ids:
+                    if method_name != "cosine_similarities":
+                        for y in range(limit):
+                            new_scores_l[y].append(1)
+                            new_scores_g[y].append(1)
+                            new_scores[y].append(1)
+                    continue
+                if conditioning[0][0][0][x].shape[0] == 2048:
+                    alts_conds_ids_l,scores_l = correlation_functions[method_name](copied_main_cond[0][0][0][x][:768],self.all_weights_l,True)
+                    alts_conds_ids_g,scores_g = correlation_functions[method_name](copied_main_cond[0][0][0][x][768:],self.all_weights_g,True)
+                    alts_conds_ids_l = alts_conds_ids_l[1:limit+1]
+                    alts_conds_ids_g = alts_conds_ids_g[1:limit+1]
+                    scores_l = scores_l[1:limit+1]
+                    scores_g = scores_g[1:limit+1]
+                    if force_clip_l:
+                        alts_conds_ids_g=alts_conds_ids_l
+                        scores_g=scores_l
+                else:
+                    alts_conds_ids, scores = correlation_functions[method_name](copied_main_cond[0][0][0][x],self.all_weights_l if "l" in initial_tokens else self.all_weights_g,True)
+                    alts_conds_ids = alts_conds_ids[1:limit+1]
+                    scores = scores[1:limit+1]
+# .to(device=model_management.get_torch_device())
+                for y in range(limit):
+                    if conditioning[0][0][0][x].shape[0] == 2048:
+                        new_conditionings[y][0][0][0][x][:768] = self.all_weights_l[alts_conds_ids_l[y]]
+                        new_conditionings[y][0][0][0][x][768:] = self.all_weights_g[alts_conds_ids_g[y]]
+                        if method_name != "cosine_similarities":
+                            if reversed_similarities:
+                                tmp_score_l = 1-scores_l[y]
+                                tmp_score_g = 1-scores_g[y]
+                            else:
+                                tmp_score_l = scores_l[y]
+                                tmp_score_g = scores_g[y]
+                            new_scores_l[y].append(tmp_score_l)
+                            new_scores_g[y].append(tmp_score_g)
+                        # new_scores_l[y][:, :x, :] = scores_l[y]
+                        # new_scores_g[y][:, :x, :] = scores_g[y]
+                    else:
+                        all_weights_tmp = self.all_weights_l if "l" in initial_tokens else self.all_weights_g
+                        new_conditionings[y][0][0][0][x] = all_weights_tmp[alts_conds_ids[y]]
+                        if method_name != "cosine_similarities":
+                            if reversed_similarities:
+                                tmp_score = 1-scores[y]
+                            else:
+                                tmp_score = scores[y]
+                            new_scores[y].append(tmp_score)
+                        # new_scores[y][:, :x, :] = scores[y]
+            if method_name != "cosine_similarities":
+                if conditioning[0][0][0][x].shape[0] == 2048 :
+                    new_scores_l = [torch.tensor(nl).unsqueeze(0).unsqueeze(2).to(device=model_management.get_torch_device()) for nl in new_scores_l]
+                    new_scores_g = [torch.tensor(nl).unsqueeze(0).unsqueeze(2).to(device=model_management.get_torch_device()) for nl in new_scores_g]
+                    # new_scores_g = torch.tensor(new_scores_g).unsqueeze(0).unsqueeze(2).to(device=model_management.get_torch_device())
+                else:
+                    new_scores = [torch.tensor(nl).unsqueeze(0).unsqueeze(2).to(device=model_management.get_torch_device()) for nl in new_scores]
+                    # new_scores = torch.tensor(new_scores).unsqueeze(0).unsqueeze(2).to(device=model_management.get_torch_device())
+
+        conditioning[0][0] = conditioning[0][0].to(device=model_management.get_torch_device())
         for x in tqdm(range(limit)):
-            cond, pooled = clip.encode_from_tokens(close_new_tokens[x], return_pooled=True)
-            new_conditioning = [[cond, {"pooled_output": pooled}]]
-            new_conditionings.append(new_conditioning)
-            alt_text, alt_text_array = tokenized_to_text(clip,close_new_tokens[x],True)
-            if print_alts:
+            if model_name == "tokenizer":
+                cond, pooled = clip.encode_from_tokens(close_new_tokens[x], return_pooled=True)
+                new_conditioning = [[cond, {"pooled_output": pooled}]]
+                new_conditioning[0][0] = new_conditioning[0][0].to(device=model_management.get_torch_device())
+                new_conditionings.append(new_conditioning)
+                alt_text, alt_text_array = tokenized_to_text(clip,close_new_tokens[x],True)
+            else:
+                new_conditioning = new_conditionings[x]
+                new_conditioning[0][0] = new_conditioning[0][0].to(device=model_management.get_torch_device())
+            
+            if print_alts and model_name == "tokenizer":
                 print(alt_text)
             
             if alternative_conditionings is None:
@@ -527,6 +727,8 @@ class conditioning_similar_tokens:
                 if alts_merging == "average":
                     alternative_conditionings[0][0] = alternative_conditionings[0][0]/limit
             else:
+                # alternative_conditionings[0][0] = alternative_conditionings[0][0].to(device=model_management.get_torch_device())
+                # new_conditioning[0][0] = new_conditioning[0][0].to(device=model_management.get_torch_device())
                 if alts_merging == "concatenate":
                     alternative_conditionings = concat_tensors_mult(alternative_conditionings,new_conditioning)
                 elif alts_merging == "average":
@@ -543,31 +745,50 @@ class conditioning_similar_tokens:
                     conditioning[0][0][..., 768:2048],word_mask = select_highest_magnitude(conditioning[0][0][..., 768:2048],new_conditioning[0][0][..., 768:2048])
                 else:
                     conditioning[0][0],word_mask = select_highest_magnitude(conditioning[0][0],new_conditioning[0][0])
-                orig_text_array = [orig_text_array[i] if word_mask[0, i] else alt_text_array[i] for i in range(len(orig_text_array))]
+                if model_name == "tokenizer":
+                    orig_text_array = [orig_text_array[i] if word_mask[0, i] else alt_text_array[i] for i in range(len(orig_text_array))]
             elif full_merging == "average":
                 conditioning[0][0] += new_conditioning[0][0]/(limit+1)
             elif full_merging == "add_diff":
                 conditioning = add_diff_conditioning_g_l_and_rescale(initial_conditioning,conditioning,new_conditioning,add_diffs_multiplier/(limit+1))
             elif full_merging == "add_diff_proportional_to_similarity" or full_merging == "add_proportional_to_similarity" \
-                or full_merging == "subtract_proportional_to_similarity" or full_merging == "average_proportional_to_similarity":
-                score = F.cosine_similarity(conditioning[0][0].to(device=model_management.get_torch_device()), new_conditioning[0][0].to(device=model_management.get_torch_device()), dim=2).to(device=model_management.get_torch_device())
-                score = score_to_weight(score).unsqueeze(2).to(device=model_management.get_torch_device())
-                if reversed_similarities:
-                    score = 1-score
-                new_scores.append(score)
+            or full_merging == "subtract_proportional_to_similarity" or full_merging == "average_proportional_to_similarity":
+                # if method_name == "cosine_similarities":
+                conditioning[0][0]=conditioning[0][0].to(device=model_management.get_torch_device())
+                new_conditioning[0][0]=new_conditioning[0][0].to(device=model_management.get_torch_device())
+                
+                if method_name == "cosine_similarities":
+                    if conditioning[0][0][0][0].shape[0] == 2048:
+                        score_l = F.cosine_similarity(conditioning[0][0][..., 0:768], new_conditioning[0][0][..., 0:768], dim=2).to(device=model_management.get_torch_device())
+                        score_g = F.cosine_similarity(conditioning[0][0][..., 768:2048], new_conditioning[0][0][..., 768:2048], dim=2).to(device=model_management.get_torch_device())
+                        score_l = score_to_weight(score_l).unsqueeze(2).to(device=model_management.get_torch_device())
+                        score_g = score_to_weight(score_g).unsqueeze(2).to(device=model_management.get_torch_device())
+                        if reversed_similarities:
+                            score_l = 1-score_l
+                            score_g = 1-score_g
+                        new_scores_l.append(score_l)
+                        new_scores_g.append(score_g)
+                    else:
+                        score = F.cosine_similarity(conditioning[0][0], new_conditioning[0][0], dim=2).to(device=model_management.get_torch_device())
+                        score = score_to_weight(score).unsqueeze(2).to(device=model_management.get_torch_device())
+                        new_scores.append(score)
+                        if reversed_similarities:
+                            score = 1-score
+                
             elif full_merging == "add_diff_loose_rescale" or full_merging == 'add_diff_loose_rescale_divided':
                 if full_merging == 'add_diff_loose_rescale_divided':
                     divider = limit
                 else:
                     divider = 1
-                conditioning[0][0] += (conditioning[0][0]-new_conditioning[0][0])*add_diffs_multiplier/divider
+                conditioning[0][0] += (deepcopy(initial_conditioning[0][0]).to(new_conditioning[0][0].device)-new_conditioning[0][0])*add_diffs_multiplier/divider
             elif full_merging == "combine":
                 conditioning = conditioning + new_conditioning
 
+        conditioning[0][0] = conditioning[0][0].to(new_conditionings[0][0][0].device)
         min_dim_mask = min(conditioning[0][0].shape[1],new_conditionings[0][0][0].shape[1])
         merging_mask  = conditioning[0][0][:,:min_dim_mask,...] == new_conditionings[0][0][0][:,:min_dim_mask,...]
 
-        if full_merging == "highest_magnitude" and print_alts:
+        if full_merging == "highest_magnitude" and print_alts and model_name == "tokenizer":
             final_prompt = ''.join([t for t in orig_text_array if t is not None])
             final_prompt = respace_punctuation(final_prompt)
             print(f"Final prompt text:\n{'-'*10}\n{final_prompt}\n{'-'*10}")
@@ -588,25 +809,65 @@ class conditioning_similar_tokens:
 
         elif full_merging == "add_diff_proportional_to_similarity" or full_merging == "add_proportional_to_similarity" \
         or full_merging == "subtract_proportional_to_similarity" or full_merging == "average_proportional_to_similarity":
-            summed_scores = torch.sum(torch.stack(new_scores).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
-            summed_conds  = torch.sum(torch.stack([cd[0][0] for cd in new_conditionings]).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+            if conditioning[0][0].shape[2] == 2048:
+                summed_scores_l = torch.sum(torch.stack(new_scores_l).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+                summed_conds_l  = torch.sum(torch.stack([cd[0][0][..., 0:768] for cd in new_conditionings]).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+                summed_scores_g = torch.sum(torch.stack(new_scores_g).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+                summed_conds_g  = torch.sum(torch.stack([cd[0][0][..., 768:2048] for cd in new_conditionings]).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+            else:
+                summed_scores = torch.sum(torch.stack(new_scores).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
+                summed_conds  = torch.sum(torch.stack([cd[0][0] for cd in new_conditionings]).to(device=model_management.get_torch_device()), dim=0).to(device=model_management.get_torch_device())
             conditioning[0][0] = conditioning[0][0].to(device=model_management.get_torch_device())
-            divider_conds = len(new_scores)
+            divider_conds = max(len(new_scores),len(new_scores_l))
+
+            
+            if conditioning[0][0].shape[2] == 2048:
+                divider_score_l = summed_scores_l
+                divider_score_g = summed_scores_g
+            else:
+                divider_score = summed_scores
+
+            if not similarities_div_by_total_score:
+                divider_score_l = 1
+                divider_score_g = 1
+                divider_score   = 1
+            
             if full_merging == "average_proportional_to_similarity":
-                conditioning[0][0] = conditioning[0][0]*(1-summed_scores/divider_conds)+summed_conds*summed_scores/divider_conds
-            for x in range(len(new_scores)):
+                if conditioning[0][0].shape[2] == 2048:
+                    conditioning[0][0][..., 0:768] = conditioning[0][0][..., 0:768]*(1-summed_scores_l/divider_conds)+summed_conds_l*summed_scores_l/divider_conds
+                    conditioning[0][0][..., 768:2048] = conditioning[0][0][..., 768:2048]*(1-summed_scores_g/divider_conds)+summed_conds_g*summed_scores_g/divider_conds
+                else:
+                    conditioning[0][0] = conditioning[0][0]*(1-summed_scores/divider_conds)+summed_conds*summed_scores/divider_conds
+            for x in range(max(len(new_scores),len(new_scores_l))):
                 new_conditioning = new_conditionings[x][0][0].to(device=model_management.get_torch_device())
-                score = new_scores[x].to(device=model_management.get_torch_device())
-                if full_merging == "add_diff_proportional_to_similarity":
-                    conditioning[0][0]+=(conditioning[0][0]-new_conditioning)*score/(summed_scores*divider_conds)
-                elif full_merging == "add_proportional_to_similarity":
-                    conditioning[0][0]+=new_conditioning*score/summed_scores
-                elif full_merging == "subtract_proportional_to_similarity":
-                    conditioning[0][0]-=new_conditioning*score/summed_scores
+                if conditioning[0][0].shape[2] == 2048:
+                    score_l = new_scores_l[x].to(device=model_management.get_torch_device())
+                    score_g = new_scores_g[x].to(device=model_management.get_torch_device())
+                    if full_merging == "add_diff_proportional_to_similarity":
+                        initial_cond_tmp = deepcopy(initial_conditioning[0][0]).to(device=model_management.get_torch_device())
+                        conditioning[0][0][..., 0:768]+=(initial_cond_tmp[..., 0:768]-new_conditioning[..., 0:768])*score_l/divider_score_l
+                        conditioning[0][0][..., 768:2048]+=(initial_cond_tmp[..., 768:2048]-new_conditioning[..., 768:2048])*score_g/divider_score_g
+                    elif full_merging == "add_proportional_to_similarity":
+                        conditioning[0][0][..., 0:768]+=new_conditioning[..., 0:768]*score_l/divider_score_l
+                        conditioning[0][0][..., 768:2048]+=new_conditioning[..., 768:2048]*score_g/divider_score_g
+                    elif full_merging == "subtract_proportional_to_similarity":
+                        conditioning[0][0][..., 0:768]-=new_conditioning[..., 0:768]*score_l/divider_score_l
+                        conditioning[0][0][..., 768:2048]-=new_conditioning[..., 768:2048]*score_g/divider_score_g
+                else:
+                    score = new_scores[x].to(device=model_management.get_torch_device())
+                    if full_merging == "add_diff_proportional_to_similarity":
+                        initial_cond_tmp = deepcopy(initial_conditioning[0][0]).to(device=model_management.get_torch_device())
+                        conditioning[0][0]+=(initial_cond_tmp-new_conditioning)*score/divider_score
+                    elif full_merging == "add_proportional_to_similarity":
+                        conditioning[0][0]+=new_conditioning*score/divider_score
+                    elif full_merging == "subtract_proportional_to_similarity":
+                        conditioning[0][0]-=new_conditioning*score/divider_score
         elif full_merging == "smallest_relative_distance":
             conditioning[0][0] = smallest_relative_distance(torch.stack([nc[0][0].to(device=model_management.get_torch_device()) for nc in [conditioning]+new_conditionings]),int(add_diffs_multiplier)).cpu()
         elif full_merging == "max_abs" or full_merging == "min_abs":
             conditioning[0][0] = furthest_from_zero(torch.stack([nc[0][0] for nc in [conditioning]+new_conditionings]),full_merging == "min_abs")
+        elif full_merging == "median_difference_add" or full_merging == "median_difference_sub":
+            conditioning[0][0] = median_difference(torch.stack([nc[0][0] for nc in [conditioning]+new_conditionings]),full_merging == "median_difference_sub")
         elif full_merging == "median_deviation_add" or full_merging == "median_deviation_sub":
             conditioning[0][0] = median_deviation(torch.stack([nc[0][0] for nc in [conditioning]+new_conditionings]),full_merging == "median_deviation_sub")
         elif full_merging == 'average_progression_to_cond':
@@ -614,14 +875,23 @@ class conditioning_similar_tokens:
         elif full_merging == 'linear_decrease_weighted_average':
             conditioning[0][0] = linear_decrease_weighted_average(torch.stack([nc[0][0] for nc in [conditioning]+new_conditionings]))
 
-        if alts_merging == "smallest_relative_distance":
+
+        if alts_merging in alt_adv_methods_keys:
+            to_stack_alt = new_conditionings[::-1]
+            stacked_alt_conditionings = torch.stack([cd[0][0] for cd in to_stack_alt]).to(device=model_management.get_torch_device())
+            alternative_conditionings[0][0] = dispatch_tensors(stacked_alt_conditionings, alts_merging).to(device=model_management.get_torch_device())
+        elif alts_merging == "smallest_relative_distance":
             alternative_conditionings[0][0] = smallest_relative_distance(torch.stack([nc[0][0].to(device=model_management.get_torch_device()) for nc in new_conditionings]),int(add_diffs_multiplier)).cpu()
         elif alts_merging == "max_abs" or alts_merging == "min_abs":
             alternative_conditionings[0][0] = furthest_from_zero(torch.stack([nc[0][0] for nc in new_conditionings]),alts_merging == "min_abs")
 
-        conditioning = rescale_tensor_values(conditioning,rescale_method,initial_rescale_value_l,initial_rescale_value_g)
+        
         conditioning[0][0] = conditioning[0][0].to(device=initial_conditioning[0][0].device)
-        conditioning[0][0][:,:min_dim_mask,...][merging_mask] = deepcopy(initial_conditioning[0][0][:,:min_dim_mask,...][merging_mask])
+        merging_mask = merging_mask.to(device=initial_conditioning[0][0].device)
+        conditioning[0][0][:,:min_dim_mask,...][merging_mask] = deepcopy(initial_conditioning[0][0][:,:min_dim_mask,...][merging_mask]).to(device=conditioning[0][0].device)
+        
+        conditioning = rescale_tensor_values(conditioning,rescale_method,initial_rescale_value_l,initial_rescale_value_g,min_dim_mask)
+        
 
         for x in range(len(conditioning)):
             if initial_conditioning[x][0].shape[1]>conditioning[x][0].shape[1]:
@@ -797,7 +1067,42 @@ class conditioning_rescale_sum_of_two_to_one:
             initial_rescale_value_l,initial_rescale_value_g = get_rescale_values_model_adapt(conditioning1,rescale_method,min_dim)
             conditioning2 = rescale_tensor_values(conditioning2,rescale_method,initial_rescale_value_l,initial_rescale_value_g)
         return (conditioning2,)
-      
+    
+def add_to_first_if_shorter(conditioning1,conditioning2,x=0):
+    min_dim = min(conditioning1[x][0].shape[1],conditioning2[x][0].shape[1])
+    if conditioning2[x][0].shape[1]>conditioning1[x][0].shape[1]:
+        conditioning2[x][0][:,:min_dim,...] = conditioning1[x][0][:,:min_dim,...]
+        conditioning1 = conditioning2
+    return conditioning1
+
+class conditioning_principal_component_analysis_merging:
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "conditioning_1": ("CONDITIONING",),
+                "conditioning_2": ("CONDITIONING",),
+            }
+        }
+
+    FUNCTION = "exec"
+    RETURN_TYPES = ("CONDITIONING",)
+    RETURN_NAMES = ("conditioning",)
+    CATEGORY = "conditioning"
+    
+    def exec(self, conditioning_1, conditioning_2):
+        conditioning1 = deepcopy(conditioning_1)
+        conditioning2 = deepcopy(conditioning_2)
+        for x in range(min(len(conditioning_1),len(conditioning_2))):
+            min_dim = min(conditioning_1[x][0].shape[1],conditioning_2[x][0].shape[1])
+            stacked_conds = torch.stack([conditioning1[x][0][:,:min_dim,...],conditioning2[x][0][:,:min_dim,...]])
+            conditioning1[x][0][:,:min_dim,...] = dispatch_tensors(stacked_conds,"principal_component_analysis")
+            conditioning1 = add_to_first_if_shorter(conditioning1,conditioning2,x)
+        return (conditioning1,)
+    
 NODE_CLASS_MAPPINGS = {
     "Conditioning similar tokens recombine":conditioning_similar_tokens,
     "Conditioning merge clip g/l":conditioning_merge_clip_g_l,
@@ -808,4 +1113,6 @@ NODE_CLASS_MAPPINGS = {
     "Conditioning (Maximum absolute) text inputs":conditioning_merge_max_abs_text_inputs,
     "Conditioning (Cosine similarities)":conditioning_merge_by_cosine_similarities,
     "Conditioning (Scale by absolute sum)":conditioning_rescale_sum_of_two_to_one,
+    "Conditioning (Principal component analysis)":conditioning_principal_component_analysis_merging,
+    "Automatic wildcards":auto_wildcards
 }
