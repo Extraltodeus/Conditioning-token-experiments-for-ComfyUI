@@ -33,7 +33,7 @@
 
 There is a few fun nodes to check related tokens and one big node to combine related conditionings in many ways.
 
-Using cosine similarities to find close-related tokens.
+Using cosine and Jaccard similarities to find close-related tokens.
 
 To either enhance the conditioning or make it more precise.
 
