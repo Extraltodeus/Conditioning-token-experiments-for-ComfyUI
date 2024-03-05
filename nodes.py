@@ -1053,7 +1053,7 @@ class conditioning_rescale_sum_of_two_to_one:
             "required": {
                 "conditioning_1": ("CONDITIONING",),
                 "conditioning_2": ("CONDITIONING",),
-                "rescale_method": (['absolute_sum_per_token','absolute_sum'], ),
+                "rescale_method": (['absolute_sum_per_token','absolute_sum','absolute_sum_dim_ignore'], ),
             }
         }
 
@@ -1065,10 +1065,30 @@ class conditioning_rescale_sum_of_two_to_one:
     def exec(self, conditioning_1, conditioning_2, rescale_method):
         conditioning1 = deepcopy(conditioning_1)
         conditioning2 = deepcopy(conditioning_2)
+        dim_ignore = False
+        if rescale_method =='absolute_sum_dim_ignore':
+            rescale_method = "absolute_sum"
+            dim_ignore = True
         for x in range(min(len(conditioning_1),len(conditioning_2))):
             min_dim = min(conditioning_1[x][0].shape[1],conditioning_2[x][0].shape[1])
-            initial_rescale_value_l,initial_rescale_value_g = get_rescale_values_model_adapt(conditioning1,rescale_method,min_dim)
-            conditioning2 = rescale_tensor_values(conditioning2,rescale_method,initial_rescale_value_l,initial_rescale_value_g)
+            if conditioning1[x][0].shape[2] == 2048:
+                cond1val_l = get_rescale_value(conditioning1[x][0][..., :768] if dim_ignore else conditioning1[x][0][:,:min_dim,:768],rescale_method)
+                cond1val_g = get_rescale_value(conditioning1[x][0][..., 768:]  if dim_ignore else conditioning1[x][0][:,:min_dim,768:], rescale_method)
+                cond2val_l = get_rescale_value(conditioning2[x][0][..., :768] if dim_ignore else conditioning2[x][0][:,:min_dim,:768],rescale_method)
+                cond2val_g = get_rescale_value(conditioning2[x][0][..., 768:]  if dim_ignore else conditioning2[x][0][:,:min_dim,768:], rescale_method)
+                if dim_ignore:
+                    conditioning2[x][0][...,:768 ] = conditioning2[x][0][...,:768 ]*cond1val_l/cond2val_l
+                    conditioning2[x][0][..., 768:] = conditioning2[x][0][..., 768:]*cond1val_g/cond2val_g
+                else:
+                    conditioning2[x][0][:,:min_dim,:768] = conditioning2[x][0][:,:min_dim,:768 ]*cond1val_l/cond2val_l
+                    conditioning2[x][0][:,:min_dim,768:] = conditioning2[x][0][:,:min_dim, 768:]*cond1val_g/cond2val_g
+            else:
+                cond1val_l = get_rescale_value(conditioning1[x][0] if dim_ignore else conditioning1[x][0][:,:min_dim,...],rescale_method)
+                cond2val_l = get_rescale_value(conditioning2[x][0] if dim_ignore else conditioning2[x][0][:,:min_dim,...],rescale_method)
+                if dim_ignore:
+                    conditioning2[x][0] = conditioning2[x][0]*cond1val_l/cond2val_l
+                else:
+                    conditioning2[x][0][:,:min_dim,...] = conditioning2[x][0][:,:min_dim,...]*cond1val_l/cond2val_l
         return (conditioning2,)
     
 def add_to_first_if_shorter(conditioning1,conditioning2,x=0):
@@ -1078,33 +1098,6 @@ def add_to_first_if_shorter(conditioning1,conditioning2,x=0):
         conditioning1 = conditioning2
     return conditioning1
 
-class conditioning_principal_component_analysis_merging:
-    def __init__(self):
-        pass
-    
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "conditioning_1": ("CONDITIONING",),
-                "conditioning_2": ("CONDITIONING",),
-            }
-        }
-
-    FUNCTION = "exec"
-    RETURN_TYPES = ("CONDITIONING",)
-    RETURN_NAMES = ("conditioning",)
-    CATEGORY = "conditioning"
-    
-    def exec(self, conditioning_1, conditioning_2):
-        conditioning1 = deepcopy(conditioning_1)
-        conditioning2 = deepcopy(conditioning_2)
-        for x in range(min(len(conditioning_1),len(conditioning_2))):
-            min_dim = min(conditioning_1[x][0].shape[1],conditioning_2[x][0].shape[1])
-            stacked_conds = torch.stack([conditioning1[x][0][:,:min_dim,...],conditioning2[x][0][:,:min_dim,...]])
-            conditioning1[x][0][:,:min_dim,...] = dispatch_tensors(stacked_conds,"principal_component_analysis")
-            conditioning1 = add_to_first_if_shorter(conditioning1,conditioning2,x)
-        return (conditioning1,)
     
 NODE_CLASS_MAPPINGS = {
     "Conditioning similar tokens recombine":conditioning_similar_tokens,
@@ -1116,6 +1109,5 @@ NODE_CLASS_MAPPINGS = {
     "Conditioning (Maximum absolute) text inputs":conditioning_merge_max_abs_text_inputs,
     "Conditioning (Cosine similarities)":conditioning_merge_by_cosine_similarities,
     "Conditioning (Scale by absolute sum)":conditioning_rescale_sum_of_two_to_one,
-    "Conditioning (Principal component analysis)":conditioning_principal_component_analysis_merging,
     "Automatic wildcards":auto_wildcards
 }
