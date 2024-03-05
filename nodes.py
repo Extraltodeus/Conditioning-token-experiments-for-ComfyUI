@@ -522,9 +522,11 @@ def rescale_tensor_values(conditioning,rescale_method,initial_rescale_value_l,in
     device = conditioning[0][0].device
     if min_dim == 0:
         min_dim = conditioning[0][0].shape[1]
-    if isinstance(initial_rescale_value_l, torch.Tensor): initial_rescale_value_l=initial_rescale_value_l.to(device=device)
-    if isinstance(initial_rescale_value_g, torch.Tensor): initial_rescale_value_g=initial_rescale_value_g.to(device=device)
-    new_rescale_value_l,new_rescale_value_g = get_rescale_values_model_adapt(conditioning,rescale_method)
+    if isinstance(initial_rescale_value_l, torch.Tensor):
+        initial_rescale_value_l=initial_rescale_value_l.to(device=device)
+    if isinstance(initial_rescale_value_g, torch.Tensor):
+        initial_rescale_value_g=initial_rescale_value_g.to(device=device)
+    new_rescale_value_l,new_rescale_value_g = get_rescale_values_model_adapt(conditioning,rescale_method,min_dim)
     if conditioning[0][0].shape[2] == 2048:
         conditioning[0][0][:,:min_dim,0:768] = conditioning[0][0][:,:min_dim,0:768]*initial_rescale_value_l/new_rescale_value_l
         conditioning[0][0][:,:min_dim, 768:2048] = conditioning[0][0][:,:min_dim, 768:2048]*initial_rescale_value_g/new_rescale_value_g
@@ -776,15 +778,6 @@ class conditioning_similar_tokens:
             elif full_merging == "combine":
                 conditioning = conditioning + new_conditioning
 
-        conditioning[0][0] = conditioning[0][0].to(new_conditionings[0][0][0].device)
-        min_dim_mask = min(conditioning[0][0].shape[1],new_conditionings[0][0][0].shape[1])
-        # merging_mask = conditioning[0][0][:,:min_dim_mask,...] == new_conditionings[0][0][0][:,:min_dim_mask,...]
-        merging_mask = (conditioning[0][0][:, :min_dim_mask, ...] == new_conditionings[0][0][0][:, :min_dim_mask, ...]).all(dim=2)
-        # tolerance = 1e-8  # Adjust this value based on what's considered "close enough" in your context
-        # merging_mask = torch.isclose(conditioning[0][0][:, :min_dim_mask, ...], new_conditionings[0][0][0][:, :min_dim_mask, ...], atol=tolerance).all(dim=2)
-        tokens_list_bool_as_tensor = torch.tensor(tokens_list_bool, device=merging_mask.device, dtype=torch.bool)
-        merging_mask = torch.logical_or(merging_mask, tokens_list_bool_as_tensor)
-
         if full_merging == "highest_magnitude" and print_alts and model_name == "tokenizer":
             final_prompt = ''.join([t for t in orig_text_array if t is not None])
             final_prompt = respace_punctuation(final_prompt)
@@ -882,12 +875,26 @@ class conditioning_similar_tokens:
             alternative_conditionings[0][0] = furthest_from_zero(torch.stack([nc[0][0] for nc in new_conditionings]),alts_merging == "min_abs")
 
         
-        conditioning[0][0] = conditioning[0][0].to(device=initial_conditioning[0][0].device)
-        merging_mask = merging_mask.to(device=initial_conditioning[0][0].device)
-        conditioning[0][0][:,:min_dim_mask,...][merging_mask] = deepcopy(initial_conditioning[0][0][:,:min_dim_mask,...][merging_mask]).to(device=conditioning[0][0].device)
-        
-        conditioning = rescale_tensor_values(conditioning,rescale_method,initial_rescale_value_l,initial_rescale_value_g,min_dim_mask)
-        
+        if full_merging != "concatenate":
+            conditioning[0][0] = conditioning[0][0].to(device=initial_conditioning[0][0].device)
+            merging_mask = torch.tensor(tokens_list_bool).unsqueeze(0).to(device=initial_conditioning[0][0].device)
+            if rescale_method == "absolute_sum_per_token":
+                initial_rescale_value_l, initial_rescale_value_g = get_rescale_values_model_adapt(initial_conditioning,rescale_method)
+                conditioning = rescale_tensor_values(conditioning,rescale_method,initial_rescale_value_l,initial_rescale_value_g)
+            else:
+                if conditioning[0][0].shape[2] == 2048:
+                    initial_rescale_value_l = get_rescale_value(initial_conditioning[0][0][..., 0:768][~merging_mask],rescale_method)
+                    initial_rescale_value_g = get_rescale_value(initial_conditioning[0][0][..., 768:2048][~merging_mask],rescale_method)
+                    new_rescale_value_l     = get_rescale_value(conditioning[0][0][..., 0:768][~merging_mask],rescale_method)
+                    new_rescale_value_g     = get_rescale_value(conditioning[0][0][..., 768:2048][~merging_mask],rescale_method)
+                    conditioning[0][0][..., 0:768][~merging_mask]    = conditioning[0][0][..., 0:768][~merging_mask]*initial_rescale_value_l/new_rescale_value_l
+                    conditioning[0][0][..., 768:2048][~merging_mask] = conditioning[0][0][..., 768:2048][~merging_mask]*initial_rescale_value_g/new_rescale_value_g
+                else:
+                    initial_rescale_value_l = get_rescale_value(initial_conditioning[0][0][~merging_mask],rescale_method)
+                    new_rescale_value_l     = get_rescale_value(conditioning[0][0][~merging_mask],rescale_method)
+                    conditioning[0][0][~merging_mask] = conditioning[0][0][~merging_mask]*initial_rescale_value_l/new_rescale_value_l
+
+            conditioning[0][0][merging_mask] = deepcopy(initial_conditioning[0][0][merging_mask]).to(device=conditioning[0][0].device)
 
         for x in range(len(conditioning)):
             if initial_conditioning[x][0].shape[1]>conditioning[x][0].shape[1]:
