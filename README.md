@@ -12,6 +12,8 @@
 - [Side experiments](#side-experiments)
 
 
+### Just a note: this is 4am programming.
+
 # UPDATE:
 - The code looks even more like garbage!
 - [GALLERY OF 856 EXAMPLES](https://mega.nz/folder/AUkE0TAB#X0CC2v6yzFh9RRDrgDGbkQ) (resize your browser to have 8 previews per line and the will be aligned)
