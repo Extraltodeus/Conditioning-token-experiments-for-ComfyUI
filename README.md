@@ -12,7 +12,7 @@
 - [Side experiments](#side-experiments)
 
 > [!WARNING]
-> ### Just a note: this is 4am programming.
+> ### This is 4am programming.
 
 # UPDATE:
 - The code looks even more like garbage!
