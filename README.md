@@ -11,7 +11,7 @@
   - [LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER](#lavender_lavender_lavender_lavender_lavender_lavender_lavender)
 - [Side experiments](#side-experiments)
 
-> [!NOTE]
+> [!WARNING]
 > ### Just a note: this is 4am programming.
 
 # UPDATE:
