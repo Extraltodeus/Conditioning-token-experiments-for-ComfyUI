@@ -11,8 +11,8 @@
   - [LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER_LAVENDER](#lavender_lavender_lavender_lavender_lavender_lavender_lavender)
 - [Side experiments](#side-experiments)
 
-
-### Just a note: this is 4am programming.
+> [!NOTE]
+> ### Just a note: this is 4am programming.
 
 # UPDATE:
 - The code looks even more like garbage!
